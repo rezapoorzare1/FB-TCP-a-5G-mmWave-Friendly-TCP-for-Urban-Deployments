@@ -1,14 +1,13 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
 
- *
  * Author: Reza Poorzare <reza.poorzare@upc.edu>
  *
  * Anna Calveras <anna.calveras@upc.edu>, Supervisor
 
  */
 
-#include "tcp-fbtcp.h"
+#include "Tcp-fbtcp.h"
 #include "ns3/log.h"
 
 namespace ns3 {
@@ -23,7 +22,8 @@ Tcpfbtcp::GetTypeId (void)
     .SetParent<TcpNewReno> ()
     .AddConstructor<Tcpfbtcp> ()
     .SetGroupName ("Internet")
-    
+
+  ;
   return tid;
 }
 
@@ -40,6 +40,7 @@ Tcpfbtcp::Tcpfbtcp (void)
 
 Tcpfbtcp::Tcpfbtcp (const Tcpfbtcp& sock)
   : TcpNewReno (sock),
+
     m_baseRtt (sock.m_baseRtt),
     m_minRtt (sock.m_minRtt),
     m_cntRtt (sock.m_cntRtt),
@@ -63,6 +64,7 @@ Tcpfbtcp::Fork (void)
 
 uint32_t congestionCounter=0;
 uint32_t fixCounter=0;
+
 static double currentThroughput;
 uint32_t maxTempCwnd=0;
 uint32_t convergenceCounter=0;
@@ -71,6 +73,7 @@ uint32_t divergenceCounter=0;
 
 void
 Tcpfbtcp::setThreshold(double th){
+
 
 currentThroughput=th;
 }
@@ -159,7 +162,7 @@ Tcpfbtcp::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
        * insure that at least 1 of those samples wasn't from a delayed ACK.
        */
       if (m_cntRtt <= 2)
-        {  // We do not have enough RTT samples, so we should behave like Reno.
+        {  // We do not have enough RTT samples, so we should behave like Reno
           NS_LOG_LOGIC ("We do not have enough RTT samples to do fbtcp, so we behave like NewReno.");
           TcpNewReno::IncreaseWindow (tcb, segmentsAcked);
         }
@@ -168,6 +171,7 @@ Tcpfbtcp::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
           NS_LOG_LOGIC ("We have enough RTT samples to perform fbtcp calculations");
           /*
            * We have enough RTT samples to perform fbtcp algorithm.
+           * Now we need to determine if cwnd should be increased or decreased
  
            */
 
@@ -178,13 +182,18 @@ Tcpfbtcp::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
           double targetcwndvscwnd;
 
 
-          double tmp = m_baseRtt.GetSeconds () / m_minRtt.GetSeconds ();
+
+          /*
+           * little trick:
+           * desidered throughput is currentCwnd * baseRtt
+           */
+           double tmp = m_baseRtt.GetSeconds () / m_minRtt.GetSeconds ();
         
 
   
           targetCwnd = static_cast<uint32_t> (segCwnd * tmp);
           NS_LOG_DEBUG ("Calculated targetCwnd = " << targetCwnd);
-          NS_ASSERT (segCwnd >= targetCwnd); 
+          NS_ASSERT (segCwnd >= targetCwnd);          
 
 
           diff = segCwnd - targetCwnd;
@@ -192,7 +201,6 @@ Tcpfbtcp::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 
                 
 //Displaying the parameters.
-
         std::cout << "Minimum rtt is = " <<   m_baseRtt.GetSeconds () << std::endl;        
         std::cout << "rtt is= " <<   m_minRtt.GetSeconds () << std::endl;        
         std::cout << "basertt/rtt= " <<   tmp << std::endl;        
@@ -208,27 +216,41 @@ Tcpfbtcp::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 
         std::cout << "diff (Current cwnd - The optimal cwnd)= " <<   diff << std::endl;  
 
+        //std::cout << "Current cwnd in bytes " <<   tcb->m_cWnd << std::endl; 
+
+        //std::cout << "Current ssthresh in bytes " <<   tcb->m_ssThresh << std::endl; 
+
+
+
+
+          NS_LOG_DEBUG ("Calculated diff = " << diff);
 
 
 
 
 //Slow Start.
-
            if (segCwnd  < 900)
+//< tcb->m_ssThresh)
+            {     // Slow start mode
 
-std::cout << "In thr Slow Start" << std::endl;
+std::cout << "In Slow Start" << std::endl;
+              NS_LOG_LOGIC ("We are in slow start.");
+
 
 
 std::cout<< "diff " << diff << std::endl;
 
                  segCwnd = 2 * segCwnd ;
-                 tcb->m_cWnd = segCwnd * tcb->m_segmentSize;
+                  tcb->m_cWnd = segCwnd * tcb->m_segmentSize;
+
 
 
             }
           else
             {     
- 
+            
+
+
 
           double temporaryCwnd;
 
@@ -263,11 +285,13 @@ std::cout << "fixCounter is: " <<   fixCounter << std::endl;
 
 
 
+
 if (segCwnd <= maxTempCwnd)
 {
 //Convergence phase has been initiated.
 convergenceCounter+=1;
-//std::cout << "Convergence counter is: " << convergenceCounter <<std::endl;
+//std::cout << "Convergen counter is: " <<   convergenceCounter << std::endl;
+//Harche targetcwndvscwnd yani we are moving too fast.
 
  if  ((0.98 <= tmp) && (tmp <= 1)  && (diff<=10)) {
 
@@ -330,6 +354,7 @@ fixCounter=0;
 else if  ((0.95 <= tmp) && (tmp <= 0.98) && ( targetcwndvscwnd >= 0.95) ){
 
 
+
                   segCwnd=segCwnd + 40;
                   tcb->m_cWnd = segCwnd * tcb->m_segmentSize;
 
@@ -340,6 +365,7 @@ fixCounter=0;
 }
 
 else if  ((0.95 <= tmp) && (tmp <= 0.98) && ( targetcwndvscwnd < 0.95) ){
+
 
 
                   segCwnd=segCwnd + 30;
@@ -408,7 +434,7 @@ else if  ((0.05 <= tmp) &&  (tmp < 0.3) && ( targetcwndvscwnd >= 0.95)) {
 
 congestionCounter+=1;   
 fixCounter=0;
-//For 2 rtts.
+//For 3 rtts.
 if (congestionCounter < 3){
                   segCwnd=segCwnd - 10;
                   tcb->m_cWnd = segCwnd * tcb->m_segmentSize;
@@ -478,7 +504,6 @@ fixCounter=0;
 
 }
 
-
 else if ((0.0 <= tmp) && (tmp < 0.05) && (targetcwndvscwnd < 0.95)) {
 
 fixCounter=0;
@@ -508,7 +533,7 @@ congestionCounter=0;
 }
 
  
-} //if (segCwnd <= maxTempCwnd)
+} 
 
 
 
@@ -597,8 +622,6 @@ fixCounter=0;
 maxTempCwnd= 0.9 * maxTempCwnd;
 }
 
-
-
       
 }
 
@@ -657,6 +680,16 @@ congestionCounter=0;
                   segCwnd=segCwnd;
         std::cout << "None of the conditions-b" << std::endl;        
 }
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -664,22 +697,26 @@ congestionCounter=0;
 }
 
 
-/*
 
-std:: cout << "Convergence counter is: " << convergenceCounter << "   and Divergence counter is: " << divergenceCounter<< std::endl;
-*/
+
+
+std:: cout << "Convergence counter is: " << convergenceCounter << "   and divergence counter is: " << divergenceCounter<< std::endl;
+
           tcb->m_ssThresh = std::max (tcb->m_ssThresh, 3 * tcb->m_cWnd / 4);
-          //NS_LOG_DEBUG ("Updated ssThresh = " << tcb->m_ssThresh);
+          NS_LOG_DEBUG ("Updated ssThresh = " << tcb->m_ssThresh);
         } 
 
 
 
-
+      // Reset cntRtt & minRtt every RTT
       m_cntRtt = 0;
       m_minRtt = Time::Max ();
 
 
     } 
+
+
+
 
 
 }
