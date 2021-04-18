@@ -3,6 +3,7 @@
  * Author: Reza Poorzare <reza.poorzare@upc.edu>
  *
  * Anna Calveras <anna.calveras@upc.edu>, Supervisor
+
  */
 
 #ifndef TCPfbtcp_H
@@ -14,10 +15,10 @@
 namespace ns3 {
 
 /**
-The FB-TCP protocol's code for the following paper:
-
-"FB-TCP: a 5G mmWave Friendly TCP for Urban Deployments"
-
+ * \ingroup congestionOps
+ *
+ * \brief An implementation of TCP fbtcp
+ 
  */
 
 class Tcpfbtcp : public TcpNewReno
@@ -36,8 +37,7 @@ public:
 
 
 
-
-//For the calculation of the upper bound.
+//The function for calculating the network's upperbound.
    void setThreshold (double th);
 
 
@@ -54,7 +54,6 @@ public:
   /**
    * \brief Compute RTTs needed to execute fbtcp algorithm
    *
-   * \param tcb internal congestion state
    * \param segmentsAcked count of segments ACKed
    * \param rtt last RTT
    *
@@ -74,19 +73,15 @@ public:
                                    const TcpSocketState::TcpCongState_t newState);
 
   /**
-   * \brief Adjust cwnd following fbtcp mechanism.
-   *
    * \param tcb internal congestion state
    * \param segmentsAcked count of segments ACKed
    */
   virtual void IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked);
 
   /**
-   *
    * \param tcb internal congestion state
    * \param bytesInFlight bytes in flight
    *
-   * \return the slow start threshold value
    */
   virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb,
                                 uint32_t bytesInFlight);
@@ -114,9 +109,9 @@ private:
   void Disablefbtcp ();
 
 private:
-  Time m_baseRtt;                    //!< Minimum of all fbtcp RTT measurements seen during the connection
-  Time m_minRtt;                     //!< Minimum of all RTT measurements within the last RTT
-  uint32_t m_cntRtt;                 //!< Number of RTT measurements during the last RTT
+  Time m_baseRtt;                    //!< Minimum of all fbtcp RTT measurements seen during connection
+  Time m_minRtt;                     //!< Minimum of all RTT measurements within last RTT
+  uint32_t m_cntRtt;                 //!< Number of RTT measurements during last RTT
   bool m_doingfbtcpNow;              //!< If true, do fbtcp for this RTT
   SequenceNumber32 m_begSndNxt;      //!< Right edge during last RTT
 };
