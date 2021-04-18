@@ -2,6 +2,6 @@ This repository contains the codes for the FB-TCP protocol from the following pa
 
 “FB-TCP: a 5G mmWave Friendly TCP for Urban Deployments.”
 
-The repository contains .cc, .h, and scenarios files.
+The repository contains .cc, .h, and scenarios' files.
 
 
